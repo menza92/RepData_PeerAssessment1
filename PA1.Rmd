@@ -13,18 +13,57 @@ require(data.table)
 
 ```{r, echo=TRUE}
 data.raw <- fread(unzip("activity.zip",files="activity.csv"))
-data.raw
+head(data.raw)
+```
+
+Next, incomplete cases are removed
+
+```{r, echo=TRUE}
+compData <- with(data.raw,complete.cases(steps,date,interval))
+data <- copy( data.raw[compData] )
+head(data)
 ```
 
 ## What is mean total number of steps taken per day?
 
 ```{r, echo=TRUE}
-data.raw[,list(sum(steps)),by=date]
+data.ts <- data.table( data[,sum(steps),by=date] )
+names(data.ts) <- c("date","total_steps")
+```
+
+Plotting a histogram of the steps
+
+```{r, echo=TRUE}
+hist(data.ts$total_steps,main="Daily Step Counts",xlab="Daily Step Count",ylab="Frequency",col="red")
+```
+
+Calculating mean
+
+```{r, echo=TRUE}
+ts.mean <- mean(data.ts$total_steps)
+ts.mean
+```
+
+Returning median
+
+```{r, echo=TRUE}
+ts.median <- median(data.ts$total_steps)
+ts.median
 ```
 
 ## What is the average daily activity pattern?
 
+```{r, echo=TRUE}
+data.asbi <- data.table( data[,mean(steps),by=interval] )
+names(data.asbi) <- c("interval","mean_steps")
+```
 
+So with step count is averaged for each 5-minute interval, 
+plotted to show average levels of activity through the day
+
+```{r, echo=TRUE}
+plot(data.asbi$interval,data.asbi$mean_steps,type="l",main="Daily Step Counts",xlab="Interval (minutes)",ylab="Average Step-Count",col="blue")
+```
 
 ## Imputing missing values
 
