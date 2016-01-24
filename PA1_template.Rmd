@@ -5,21 +5,118 @@ output:
     keep_md: true
 ---
 
+```{r, echo=TRUE}
+require(data.table)
+```
 
 ## Loading and preprocessing the data
 
+```{r, echo=TRUE}
+data.raw <- fread(unzip("activity.zip",files="activity.csv"))
+head(data.raw)
+```
 
+Next, incomplete cases are removed.  
+This is accomplished by adding a logical column that's true for complete cases
+
+```{r, echo=TRUE}
+data.raw[,comp_case:= complete.cases(steps,date,interval)]
+data <- copy( data.raw[comp_case==TRUE] )
+head(data)
+```
 
 ## What is mean total number of steps taken per day?
 
+```{r, echo=TRUE}
+data.ts <- data[,sum(steps),by=date]
+names(data.ts) <- c("date","total_steps")
+```
 
+Plotting a histogram of the steps
+
+```{r, echo=TRUE}
+hist(data.ts$total_steps,main="Daily Step Counts",xlab="Daily Step Count",ylab="Frequency",col="red")
+```
+
+Calculating mean
+
+```{r, echo=TRUE}
+ts.mean <- mean(data.ts$total_steps)
+ts.mean
+```
+
+Returning median
+
+```{r, echo=TRUE}
+ts.median <- median(data.ts$total_steps)
+ts.median
+```
 
 ## What is the average daily activity pattern?
 
+```{r, echo=TRUE}
+data.asbi <- data[,mean(steps),by=interval]
+names(data.asbi) <- c("interval","mean_steps")
+```
 
+So with step count is averaged for each 5-minute interval, 
+plotted to show average levels of activity through the day
 
-## Imputing missing values
+```{r, echo=TRUE}
+plot(data.asbi$interval,data.asbi$mean_steps,type="l",main="Daily Step Counts",xlab="Interval (minutes)",ylab="Average Step-Count",col="blue")
+```
 
+## Inputing missing values
 
+The total missing value can be expressed as the sum of logical columns from the original data table
+
+```{r, echo=TRUE}
+with( data.raw, sum(is.na(date))+sum(is.na(interval)) )
+with( data.raw, sum(is.na(steps)) )
+```
+
+Noting that only steps are missing means all instances of incomplete cases are taged by the 'comp_case' column.  
+Missing values are substituted with the average of their date
+
+```{r, echo=TRUE}
+averageSteps <- as.integer(mean(data$steps))
+data.raw[comp_case==FALSE,steps:= averageSteps]
+head(data.raw)
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+Adding a factor column to indicate if an entry is for a weekday
+
+```{r, echo=TRUE}
+data.raw[,day:= weekdays( as.Date(date, format="%Y-%m-%d") )]
+data.raw[,dayType:= ifelse( day=="Sunday" | day=="Saturday", "weekend", "weekday" ) ]
+head(data.raw)
+```
+
+Making a data set for weekend and weekday data
+
+```{r, echo=TRUE}
+# Weekday average steps by interval
+data.wkd <- data.raw[dayType=='weekday'][,mean(steps),by=interval]
+names(data.wkd) <- c("interval","mean_steps")
+# Weekend average steps by interval
+data.wke <- data.raw[dayType=='weekend'][,mean(steps),by=interval]
+names(data.wke) <- c("interval","mean_steps")
+```
+
+Plotting based on average intervals, grouped by dayType
+
+```{r, echo=TRUE}
+par(mfrow=c(1, 2), mar=c(4, 4, 1, 1))
+# Weekday plot (left)
+with(data.wkd, plot( interval, mean_steps, type="l",main="Weekday",xlab="Interval (minutes)",ylab="Average Step-Count",col="blue")  )
+# Weekend plot (right)
+with(data.wke, plot( interval, mean_steps, type="l",main="Weekend",xlab="Interval (minutes)",ylab="Average Step-Count",col="purple")  )
+```
+
+
+
+
+
+
