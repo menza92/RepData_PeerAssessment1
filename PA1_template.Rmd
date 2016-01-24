@@ -66,6 +66,13 @@ plotted to show average levels of activity through the day
 plot(data.asbi$interval,data.asbi$mean_steps,type="l",main="Daily Step Counts",xlab="Interval (minutes)",ylab="Average Step-Count",col="blue")
 ```
 
+The 5-minute interval with the largest average step count
+
+```{r, echo=TRUE}
+maxInterval <- max(data.asbi$mean_steps)
+data.asbi[mean_steps==maxInterval]
+```
+
 ## Inputing missing values
 
 The total missing value can be expressed as the sum of logical columns from the original data table
@@ -81,7 +88,14 @@ Missing values are substituted with the average of their date
 ```{r, echo=TRUE}
 averageSteps <- as.integer(mean(data$steps))
 data.raw[comp_case==FALSE,steps:= averageSteps]
-head(data.raw)
+```
+
+Re-plotting the histogram with updated missing values
+
+```{r, echo=TRUE}
+data.ts <- data.raw[,sum(steps),by=date]
+names(data.ts) <- c("date","total_steps")
+hist(data.ts$total_steps,main="Daily Step Counts (updated)",xlab="Daily Step Count",ylab="Frequency",col="green")
 ```
 
 ## Are there differences in activity patterns between weekdays and weekends?
